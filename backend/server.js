@@ -28,6 +28,32 @@ app.use('/api/materials', materialRoutes);
 app.use('/api/users',     userRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+// Seed route - creates demo users
+app.get('/api/seed', async (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const User = require('./models/User');
+    const password = await bcrypt.hash('demo123', 10);
+    const users = [
+      { name: 'Admin User',   email: 'admin@demo.com',   password, role: 'admin'   },
+      { name: 'Demo Teacher', email: 'teacher@demo.com', password, role: 'teacher' },
+      { name: 'Demo Student', email: 'student@demo.com', password, role: 'student' },
+    ];
+    const results = [];
+    for (const u of users) {
+      const exists = await User.findOne({ email: u.email });
+      if (exists) {
+        results.push(`Already exists: ${u.email}`);
+      } else {
+        await User.create(u);
+        results.push(`Created: ${u.email}`);
+      }
+    }
+    res.json({ success: true, results });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
 app.use(errorHandler);
 
