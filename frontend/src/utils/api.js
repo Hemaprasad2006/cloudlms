@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || '/api',
+  baseURL: 'https://cloudlms-backend.onrender.com/api',
 });
 
 API.interceptors.request.use((config) => {
@@ -51,9 +51,9 @@ export const getCourseMaterials = (courseId) => API.get(`/materials/course/${cou
 export const deleteMaterial     = (id)        => API.delete(`/materials/${id}`);
 export const updateMaterial     = (id, data)  => API.put(`/materials/${id}`, data);
 
-export const getAllUsers       = (params) => API.get('/users', { params });
-export const getDashboardStats = ()       => API.get('/users/stats');
-export const toggleUserActive  = (id)     => API.put(`/users/${id}/toggle-active`);
-export const promoteToTeacher  = (id)     => API.put(`/users/${id}/promote`);
+export const getAllUsers        = (params) => API.get('/users', { params });
+export const getDashboardStats  = ()       => API.get('/users/stats');
+export const toggleUserActive   = (id)     => API.put(`/users/${id}/toggle-active`);
+export const promoteToTeacher   = (id)     => API.put(`/users/${id}/promote`);
 
 export default API;
