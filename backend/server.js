@@ -18,8 +18,8 @@ connectDB();
 
 app.use(helmet());
 app.use(cors({
-  origin: ['https://cloudlms-lovat.vercel.app', 'http://localhost:3000'],
-  credentials: true
+  origin: '*',
+  credentials: false
 }));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 app.use(express.json());
