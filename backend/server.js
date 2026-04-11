@@ -16,11 +16,15 @@ const { errorHandler } = require('./middleware/errorMiddleware');
 const app = express();
 connectDB();
 
-app.use(helmet());
+// ─── CORS — allow all origins ───────────────────────────────────
 app.use(cors({
-  origin: '*',
-  credentials: false
+  origin: true,
+  credentials: true,
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Content-Type','Authorization']
 }));
+
+app.use(helmet({ crossOriginResourcePolicy: false }));
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 app.use(express.json());
 app.use(morgan('dev'));
@@ -30,8 +34,9 @@ app.use('/api/courses',   courseRoutes);
 app.use('/api/materials', materialRoutes);
 app.use('/api/users',     userRoutes);
 
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
-// Seed route - creates demo users
+app.get('/api/health', (req, res) => res.json({ status: 'ok', message: 'Backend is running!' }));
+
+// Seed route
 app.get('/api/seed', async (req, res) => {
   try {
     const bcrypt = require('bcryptjs');
@@ -57,6 +62,7 @@ app.get('/api/seed', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 app.use((req, res) => res.status(404).json({ message: 'Route not found' }));
 app.use(errorHandler);
 
