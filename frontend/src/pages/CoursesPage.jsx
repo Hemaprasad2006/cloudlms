@@ -2,6 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { getCourses } from '../utils/api';
 import CourseCard from '../components/courses/CourseCard';
 import { FiSearch, FiZap } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const CATEGORIES = ['All','Mathematics','Science','Physics','Chemistry','Biology','Computer Science','English','History','Geography','Other'];
 
@@ -13,7 +15,7 @@ export default function CoursesPage() {
   const [category, setCategory]       = useState('All');
   const [page, setPage]               = useState(1);
   const [searchInput, setSearchInput] = useState('');
-
+  const { user } = useAuth();
   const fetchCourses = useCallback(async () => {
     setLoading(true);
     try {
@@ -39,6 +41,16 @@ export default function CoursesPage() {
         <div className="hero-tag"><FiZap size={12}/> Cloud-Powered Learning</div>
         <h1>Learn Without <span>Limits</span></h1>
         <p>Discover expert-led courses. Access notes and videos anytime, anywhere from the cloud.</p>
+        {!user && (
+  <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: '1.5rem' }}>
+    <Link to="/login" className="btn btn-primary">
+      Sign In
+    </Link>
+    <Link to="/register" className="btn btn-outline">
+      Create Account
+    </Link>
+  </div>
+)}
 
         {/* Search */}
         <form onSubmit={handleSearch} className="search-wrap">
