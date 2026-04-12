@@ -36,28 +36,36 @@ app.use('/api/users',     userRoutes);
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok', message: 'Backend is running!' }));
 
-// Seed route
-app.get('/api/seed', async (req, res) => {
+// Reset demo users with fresh passwords
+app.get('/api/seed-reset', async (req, res) => {
   try {
     const bcrypt = require('bcryptjs');
     const User = require('./models/User');
+
+    // Delete existing demo users
+    await User.deleteMany({ 
+      email: { $in: ['admin@demo.com', 'teacher@demo.com', 'student@demo.com'] } 
+    });
+
+    // Create fresh ones
     const password = await bcrypt.hash('demo123', 10);
     const users = [
-      { name: 'Admin User',   email: 'admin@demo.com',   password, role: 'admin'   },
-      { name: 'Demo Teacher', email: 'teacher@demo.com', password, role: 'teacher' },
-      { name: 'Demo Student', email: 'student@demo.com', password, role: 'student' },
+      { name: 'Admin User',   email: 'admin@demo.com',   password, role: 'admin',   isActive: true },
+      { name: 'Demo Teacher', email: 'teacher@demo.com', password, role: 'teacher', isActive: true },
+      { name: 'Demo Student', email: 'student@demo.com', password, role: 'student', isActive: true },
     ];
-    const results = [];
-    for (const u of users) {
-      const exists = await User.findOne({ email: u.email });
-      if (exists) {
-        results.push(`Already exists: ${u.email}`);
-      } else {
-        await User.create(u);
-        results.push(`Created: ${u.email}`);
-      }
-    }
-    res.json({ success: true, results });
+
+    await User.insertMany(users);
+
+    res.json({ 
+      success: true, 
+      message: 'Demo users reset successfully!',
+      accounts: [
+        'admin@demo.com / demo123',
+        'teacher@demo.com / demo123',
+        'student@demo.com / demo123'
+      ]
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
