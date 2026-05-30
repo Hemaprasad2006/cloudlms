@@ -2,58 +2,44 @@ import axios from 'axios';
 
 const API = axios.create({
   baseURL: 'https://cloudlms-backend.onrender.com/api',
+  withCredentials: true,
 });
 
-API.interceptors.request.use((config) => {
-  const token = localStorage.getItem('lms_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+// Request interceptor — add JWT token to every request
+API.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    console.log('🔑 Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN FOUND');
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+      console.log('✅ JWT token added to request header');
+    } else {
+      console.warn('⚠️ WARNING: No JWT token found in localStorage!');
+    }
+    
+    return config;
+  },
+  (error) => {
+    console.error('❌ Request interceptor error:', error);
+    return Promise.reject(error);
+  }
+);
 
+// Response interceptor — handle 401 errors
 API.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(`✅ API Response (${response.status}):`, response.data);
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('lms_token');
+      console.error('❌ 401 Unauthorized — Token may be expired or invalid');
+      localStorage.removeItem('token');
       window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
-
-export const registerUser   = (data) => API.post('/auth/register', data);
-export const loginUser      = (data) => API.post('/auth/login', data);
-export const getMe          = ()     => API.get('/auth/me');
-export const updateProfile  = (data) => API.put('/auth/profile', data);
-
-export const getCourses         = (params) => API.get('/courses', { params });
-export const getCourseById      = (id)     => API.get(`/courses/${id}`);
-export const getMyCourses       = ()       => API.get('/courses/my-courses');
-export const getEnrolledCourses = ()       => API.get('/courses/enrolled');
-export const createCourse       = (data)   => API.post('/courses', data);
-export const updateCourse       = (id, data) => API.put(`/courses/${id}`, data);
-export const deleteCourse       = (id)     => API.delete(`/courses/${id}`);
-export const enrollCourse       = (id)     => API.post(`/courses/${id}/enroll`);
-
-export const uploadNote = (data, onProgress) =>
-  API.post('/materials/note', data, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    onUploadProgress: (e) => onProgress && onProgress(Math.round((e.loaded * 100) / e.total)),
-  });
-
-export const uploadVideo = (data, onProgress) =>
-  API.post('/materials/video', data, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    onUploadProgress: (e) => onProgress && onProgress(Math.round((e.loaded * 100) / e.total)),
-  });
-
-export const getCourseMaterials = (courseId) => API.get(`/materials/course/${courseId}`);
-export const deleteMaterial     = (id)        => API.delete(`/materials/${id}`);
-export const updateMaterial     = (id, data)  => API.put(`/materials/${id}`, data);
-
-export const getAllUsers        = (params) => API.get('/users', { params });
-export const getDashboardStats  = ()       => API.get('/users/stats');
-export const toggleUserActive   = (id)     => API.put(`/users/${id}/toggle-active`);
-export const promoteToTeacher   = (id)     => API.put(`/users/${id}/promote`);
 
 export default API;
