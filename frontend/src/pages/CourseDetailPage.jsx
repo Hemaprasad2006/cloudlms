@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { getCourseById, enrollCourse } from '../utils/api';
+import API from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { FiUsers, FiFileText, FiPlay, FiDownload, FiLock, FiChevronLeft, FiBookOpen } from 'react-icons/fi';
 
@@ -10,15 +10,35 @@ export default function CourseDetailPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [course, setCourse]       = useState(null);
+  const [materials, setMaterials] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [enrolling, setEnrolling] = useState(false);
   const [active, setActive]       = useState(null);
 
   useEffect(() => {
-    getCourseById(id)
-      .then(({ data }) => setCourse(data))
-      .catch(() => toast.error('Course not found.'))
-      .finally(() => setLoading(false));
+    const fetchData = async () => {
+      try {
+        // Fetch course
+        const courseRes = await API.get(`/courses/${id}`);
+        setCourse(courseRes.data);
+
+        // Fetch materials
+        try {
+          const materialsRes = await API.get(`/materials/course/${id}`);
+          console.log('Materials fetched:', materialsRes.data);
+          setMaterials(materialsRes.data);
+        } catch (err) {
+          console.log('Materials fetch error:', err.message);
+          setMaterials([]);
+        }
+      } catch (err) {
+        toast.error('Course not found.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
   }, [id]);
 
   const isTeacher  = course?.teacher?._id === user?._id || user?.role === 'admin';
@@ -29,13 +49,15 @@ export default function CourseDetailPage() {
     if (!user) return navigate('/login');
     setEnrolling(true);
     try {
-      await enrollCourse(id);
+      await API.post(`/courses/${id}/enroll`);
       toast.success('Enrolled successfully! 🎉');
-      const { data } = await getCourseById(id);
+      const { data } = await API.get(`/courses/${id}`);
       setCourse(data);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Enrollment failed.');
-    } finally { setEnrolling(false); }
+    } finally { 
+      setEnrolling(false); 
+    }
   };
 
   if (loading) return (
@@ -66,8 +88,8 @@ export default function CourseDetailPage() {
               <h1 className="course-detail-title">{course.title}</h1>
               <p className="course-detail-desc">{course.description}</p>
               <div className="course-meta">
-                <div className="course-meta-item"><FiUsers size={14}/> {course.enrolledCount} students</div>
-                <div className="course-meta-item"><FiBookOpen size={14}/> {course.materials?.length || 0} materials</div>
+                <div className="course-meta-item"><FiUsers size={14}/> {course.enrolledStudents?.length || 0} students</div>
+                <div className="course-meta-item"><FiBookOpen size={14}/> {materials.length} materials</div>
                 <div className="course-meta-item">👤 {course.teacher?.name}</div>
               </div>
             </div>
@@ -101,12 +123,12 @@ export default function CourseDetailPage() {
           )}
 
           {/* Materials List */}
-          {canAccess && course.materials?.length > 0 && (
+          {canAccess && materials.length > 0 && (
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
-                <div className="card-title">Course Materials ({course.materials.length})</div>
+                <div className="card-title">Course Materials ({materials.length})</div>
               </div>
-              {course.materials.map(mat => (
+              {materials.map(mat => (
                 <button key={mat._id}
                   onClick={() => setActive(active?._id === mat._id ? null : mat)}
                   style={{
@@ -145,7 +167,7 @@ export default function CourseDetailPage() {
                 Enroll to Access Materials
               </h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                {course.materials?.length || 0} learning resources waiting for you
+                {materials.length} learning resources waiting for you
               </p>
             </div>
           )}
@@ -160,8 +182,8 @@ export default function CourseDetailPage() {
             )}
             <div className="enroll-card-top">
               {[
-                ['Materials', `${course.materials?.length || 0} items`],
-                ['Students',  course.enrolledCount],
+                ['Materials', `${materials.length} items`],
+                ['Students',  course.enrolledStudents?.length || 0],
                 ['Category',  course.category],
                 ['Instructor',course.teacher?.name],
               ].map(([l, v]) => (
