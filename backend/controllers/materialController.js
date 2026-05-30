@@ -28,31 +28,34 @@ const uploadNote = async (req, res) => {
     console.log('📤 Uploading note to Cloudinary...');
     const result = await uploadToCloudinary(req.file.buffer, 'lms/notes', 'raw');
     console.log('✅ Cloudinary upload successful:', result.public_id);
+    console.log('✅ Cloudinary URL:', result.secure_url);
 
-    console.log('💾 Saving material to MongoDB...');
-    const material = await Material.create({
+    console.log('💾 Creating material in MongoDB...');
+    const materialData = {
       title: title.trim(),
       description: description ? description.trim() : '',
-      course: courseId,
+      course: courseId, // ObjectId reference
       uploadedBy: req.user._id,
       type: 'note',
       cloudinaryUrl: result.secure_url,
       cloudinaryPublicId: result.public_id,
       fileSize: req.file.size || 0,
       order: parseInt(order) || 0,
-    });
+    };
     
-    console.log('✅ Material saved to MongoDB:', material._id);
+    console.log('Material data to save:', materialData);
+    
+    const material = await Material.create(materialData);
+    
+    console.log('✅ Material saved to MongoDB with ID:', material._id);
 
-    // Populate and return
-    const populatedMaterial = await material.populate('uploadedBy', 'name email');
-    
     res.status(201).json({ 
       message: 'Note uploaded successfully.', 
-      material: populatedMaterial 
+      material: material 
     });
   } catch (error) {
-    console.error('❌ Error in uploadNote:', error);
+    console.error('❌ Error in uploadNote:', error.message);
+    console.error('Stack:', error.stack);
     res.status(error.statusCode || 500).json({ message: error.message });
   }
 };
@@ -75,68 +78,83 @@ const uploadVideo = async (req, res) => {
     console.log('📤 Uploading video to Cloudinary...');
     const result = await uploadToCloudinary(req.file.buffer, 'lms/videos', 'video');
     console.log('✅ Cloudinary upload successful:', result.public_id);
+    console.log('✅ Cloudinary URL:', result.secure_url);
 
-    console.log('💾 Saving material to MongoDB...');
-    const material = await Material.create({
+    console.log('💾 Creating material in MongoDB...');
+    const materialData = {
       title: title.trim(),
       description: description ? description.trim() : '',
-      course: courseId,
+      course: courseId, // ObjectId reference
       uploadedBy: req.user._id,
       type: 'video',
       cloudinaryUrl: result.secure_url,
       cloudinaryPublicId: result.public_id,
       fileSize: req.file.size || 0,
       order: parseInt(order) || 0,
-    });
+    };
     
-    console.log('✅ Material saved to MongoDB:', material._id);
+    console.log('Material data to save:', materialData);
+    
+    const material = await Material.create(materialData);
+    
+    console.log('✅ Material saved to MongoDB with ID:', material._id);
 
-    // Populate and return
-    const populatedMaterial = await material.populate('uploadedBy', 'name email');
-    
     res.status(201).json({ 
       message: 'Video uploaded successfully.', 
-      material: populatedMaterial 
+      material: material 
     });
   } catch (error) {
-    console.error('❌ Error in uploadVideo:', error);
+    console.error('❌ Error in uploadVideo:', error.message);
+    console.error('Stack:', error.stack);
     res.status(error.statusCode || 500).json({ message: error.message });
   }
 };
 
 const getCourseMaterials = async (req, res) => {
   try {
-    const { courseId } = req.params;
+    const courseId = req.params.courseId;
     
-    console.log(`📖 Fetching materials for course ${courseId}...`);
+    console.log(`\n🔍 getCourseMaterials called for courseId: ${courseId}`);
+    console.log(`👤 User ID: ${req.user._id}, Role: ${req.user.role}`);
     
-    // First check if course exists
+    // Check if course exists
     const course = await Course.findById(courseId);
+    console.log(`📖 Course found:`, course ? `Yes (${course.title})` : 'No');
+    
     if (!course) {
+      console.log('❌ Course not found');
       return res.status(404).json({ message: 'Course not found.' });
     }
 
-    // Check if user has access to view materials
+    // Check permissions
     const isTeacher = course.teacher.toString() === req.user._id.toString();
     const isEnrolled = course.enrolledStudents.map(id => id.toString()).includes(req.user._id.toString());
     const isAdmin = req.user.role === 'admin';
 
-    console.log(`User role: ${req.user.role}, isTeacher: ${isTeacher}, isEnrolled: ${isEnrolled}, isAdmin: ${isAdmin}`);
+    console.log(`✓ isTeacher: ${isTeacher}`);
+    console.log(`✓ isEnrolled: ${isEnrolled}`);
+    console.log(`✓ isAdmin: ${isAdmin}`);
 
     if (!isTeacher && !isEnrolled && !isAdmin) {
+      console.log('❌ User not authorized to view materials');
       return res.status(403).json({ message: 'You are not enrolled in this course.' });
     }
 
-    // Fetch materials from MongoDB
+    // Get materials
+    console.log(`📚 Fetching materials for course: ${courseId}`);
     const materials = await Material.find({ course: courseId })
       .populate('uploadedBy', 'name email')
       .sort({ order: 1, createdAt: -1 });
 
     console.log(`✅ Found ${materials.length} materials`);
+    materials.forEach((m, i) => {
+      console.log(`   [${i+1}] ${m.title} (${m.type})`);
+    });
     
     res.json(materials);
   } catch (error) {
-    console.error('❌ Error in getCourseMaterials:', error);
+    console.error('❌ Error in getCourseMaterials:', error.message);
+    console.error('Stack:', error.stack);
     res.status(500).json({ message: error.message });
   }
 };
@@ -187,34 +205,12 @@ const updateMaterial = async (req, res) => {
     if (req.body.order !== undefined) m.order = parseInt(req.body.order);
 
     await m.save();
-    const updated = await m.populate('uploadedBy', 'name email');
 
-    res.json({ message: 'Material updated successfully.', material: updated });
+    res.json({ message: 'Material updated successfully.', material: m });
   } catch (error) {
     console.error('❌ Error in updateMaterial:', error);
     res.status(500).json({ message: error.message });
   }
 };
-const debugMaterials = async (req, res) => {
-  try {
-    console.log('\n========== DEBUG: Getting ALL Materials ==========');
-    
-    const allMaterials = await Material.find({})
-      .populate('course', 'title')
-      .populate('uploadedBy', 'name email role');
-    
-    console.log(`Total materials in DB: ${allMaterials.length}`);
-    allMaterials.forEach((m, i) => {
-      console.log(`\n[${i+1}] ${m.title}`);
-      console.log(`    Type: ${m.type}`);
-      console.log(`    Course ID: ${m.course._id}`);
-      console.log(`    Course Name: ${m.course.title}`);
-      console.log(`    Uploaded By: ${m.uploadedBy.name}`);
-    });
-    
-    res.json({ materialsCount: allMaterials.length, materials: allMaterials });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-module.exports = { uploadNote, uploadVideo, getCourseMaterials, deleteMaterial, updateMaterial, debugMaterials };
+
+module.exports = { uploadNote, uploadVideo, getCourseMaterials, deleteMaterial, updateMaterial };
