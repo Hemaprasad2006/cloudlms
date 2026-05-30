@@ -1,12 +1,10 @@
 const express = require('express');
+const multer = require('multer');
 const { uploadNote, uploadVideo, getCourseMaterials, deleteMaterial, updateMaterial } = require('../controllers/materialController');
 const { protect, authorize } = require('../middleware/authMiddleware');
-const multer = require('multer');
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
 
 const router = express.Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.post('/note', protect, authorize('teacher', 'admin'), upload.single('file'), uploadNote);
 router.post('/video', protect, authorize('teacher', 'admin'), upload.single('file'), uploadVideo);
