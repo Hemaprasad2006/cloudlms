@@ -15,5 +15,6 @@ router.get('/course/:courseId', protect, getCourseMaterials);
 // Update and delete (teacher/admin only)
 router.put('/:id', protect, authorize('teacher', 'admin'), updateMaterial);
 router.delete('/:id', protect, authorize('teacher', 'admin'), deleteMaterial);
+router.get('/debug/all', protect, debugMaterials);
  
 module.exports = router;

@@ -195,5 +195,26 @@ const updateMaterial = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-module.exports = { uploadNote, uploadVideo, getCourseMaterials, deleteMaterial, updateMaterial };
+const debugMaterials = async (req, res) => {
+  try {
+    console.log('\n========== DEBUG: Getting ALL Materials ==========');
+    
+    const allMaterials = await Material.find({})
+      .populate('course', 'title')
+      .populate('uploadedBy', 'name email role');
+    
+    console.log(`Total materials in DB: ${allMaterials.length}`);
+    allMaterials.forEach((m, i) => {
+      console.log(`\n[${i+1}] ${m.title}`);
+      console.log(`    Type: ${m.type}`);
+      console.log(`    Course ID: ${m.course._id}`);
+      console.log(`    Course Name: ${m.course.title}`);
+      console.log(`    Uploaded By: ${m.uploadedBy.name}`);
+    });
+    
+    res.json({ materialsCount: allMaterials.length, materials: allMaterials });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+module.exports = { uploadNote, uploadVideo, getCourseMaterials, deleteMaterial, updateMaterial, debugMaterials };
