@@ -4,8 +4,15 @@ const { uploadNote, uploadVideo, getCourseMaterials, deleteMaterial, updateMater
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 const router = express.Router();
-const upload = multer({ storage: multer.memoryStorage() });
 
+// Configure multer
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 500 * 1024 * 1024 }
+});
+
+// Routes
 router.post('/note', protect, authorize('teacher', 'admin'), upload.single('file'), uploadNote);
 router.post('/video', protect, authorize('teacher', 'admin'), upload.single('file'), uploadVideo);
 router.get('/course/:courseId', protect, getCourseMaterials);
