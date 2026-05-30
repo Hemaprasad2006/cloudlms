@@ -18,20 +18,28 @@ export default function CourseDetailPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // Get token from localStorage
+        const token = localStorage.getItem('token');
+        console.log('Token:', token ? 'Found' : 'Not found');
+
         // Fetch course
         const courseRes = await API.get(`/courses/${id}`);
         setCourse(courseRes.data);
+        console.log('Course fetched:', courseRes.data.title);
 
-        // Fetch materials
+        // Fetch materials with explicit token header
         try {
-          const materialsRes = await API.get(`/materials/course/${id}`);
-          console.log('Materials fetched:', materialsRes.data);
-          setMaterials(materialsRes.data);
-        } catch (err) {
-          console.log('Materials fetch error:', err.message);
+          const config = token ? { headers: { 'Authorization': `Bearer ${token}` } } : {};
+          const materialsRes = await API.get(`/materials/course/${id}`, config);
+          console.log('Materials fetched:', materialsRes.data.length, 'items');
+          setMaterials(materialsRes.data || []);
+        } catch (matErr) {
+          console.error('Materials error:', matErr.message);
+          console.error('Full error:', matErr.response?.data);
           setMaterials([]);
         }
       } catch (err) {
+        console.error('Course error:', err.message);
         toast.error('Course not found.');
       } finally {
         setLoading(false);
@@ -53,7 +61,14 @@ export default function CourseDetailPage() {
       toast.success('Enrolled successfully! 🎉');
       const { data } = await API.get(`/courses/${id}`);
       setCourse(data);
+      
+      // Refetch materials after enrollment
+      const token = localStorage.getItem('token');
+      const config = token ? { headers: { 'Authorization': `Bearer ${token}` } } : {};
+      const matRes = await API.get(`/materials/course/${id}`, config);
+      setMaterials(matRes.data || []);
     } catch (err) {
+      console.error('Enroll error:', err);
       toast.error(err.response?.data?.message || 'Enrollment failed.');
     } finally { 
       setEnrolling(false); 
@@ -81,7 +96,6 @@ export default function CourseDetailPage() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, alignItems: 'start' }}>
         <div>
-          {/* Hero */}
           <div className="course-detail-hero">
             <div className="course-detail-hero-content">
               <div className="course-detail-tag">📚 {course.category}</div>
@@ -95,7 +109,6 @@ export default function CourseDetailPage() {
             </div>
           </div>
 
-          {/* Active Viewer */}
           {active && (
             <div className="viewer-card">
               <div className="viewer-header">
@@ -122,7 +135,6 @@ export default function CourseDetailPage() {
             </div>
           )}
 
-          {/* Materials List */}
           {canAccess && materials.length > 0 && (
             <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
               <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
@@ -159,7 +171,6 @@ export default function CourseDetailPage() {
             </div>
           )}
 
-          {/* Lock message for non-enrolled */}
           {!canAccess && (
             <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
               <FiLock size={40} style={{ color: 'var(--text-muted)', marginBottom: 16 }} />
@@ -173,7 +184,6 @@ export default function CourseDetailPage() {
           )}
         </div>
 
-        {/* Sidebar */}
         <div className="course-sidebar">
           <div className="enroll-card">
             {course.thumbnail && (
