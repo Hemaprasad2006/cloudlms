@@ -102,7 +102,10 @@ const togglePublish = async (req, res) => {
   res.json({ message: `Course ${course.isPublished ? 'published' : 'unpublished'}.`, course });
 };
 
-const getMyCourses       = async (req, res) => res.json(await Course.find({ teacher: req.user._id }).sort({ createdAt: -1 }));
+const getMyCourses = async (req, res) => {
+  const query = req.user.role === 'admin' ? {} : { teacher: req.user._id };
+  res.json(await Course.find(query).populate('teacher', 'name').sort({ createdAt: -1 }));
+};
 const getEnrolledCourses = async (req, res) => res.json(await Course.find({ enrolledStudents: req.user._id, isPublished: true }).populate('teacher','name').sort({ createdAt: -1 }));
 
 module.exports = { getCourses, getCourseById, createCourse, updateCourse, deleteCourse, enrollCourse, getMyCourses, getEnrolledCourses, togglePublish };
