@@ -14,10 +14,10 @@ export default function Navbar() {
   const isActive = (p) => location.pathname === p;
 
   const navLinks = [
-    { to: '/courses',   label: 'Explore',        roles: ['student','teacher','admin'] },
-    { to: '/dashboard', label: 'My Learning',     roles: ['student'] },
-    { to: '/teacher',   label: 'Teacher Portal',  roles: ['teacher','admin'] },
-    { to: '/admin',     label: 'Admin',           roles: ['admin'] },
+    { to: '/courses',        label: 'Explore',        roles: ['student','teacher','admin'] },
+    { to: '/my-learning',    label: 'My Learning',    roles: ['student'] },
+    { to: '/teacher-portal', label: 'Teacher Portal', roles: ['teacher','admin'] },
+    { to: '/admin',          label: 'Admin',          roles: ['admin'] },
   ].filter(l => l.roles.includes(user?.role));
 
   const badgeClass = { student: 'badge-student', teacher: 'badge-teacher', admin: 'badge-admin' };

@@ -26,7 +26,7 @@ const uploadNote = async (req, res) => {
     await verifyTeacher(courseId, req.user._id, req.user.role);
 
     console.log('📤 Uploading note to Cloudinary...');
-    const result = await uploadToCloudinary(req.file.buffer, 'lms/notes', 'raw');
+    const result = await uploadToCloudinary(req.file.buffer, 'lms/notes', 'auto');
     console.log('✅ Cloudinary upload successful:', result.public_id);
     console.log('✅ Cloudinary URL:', result.secure_url);
 

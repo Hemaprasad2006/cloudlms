@@ -18,9 +18,9 @@ export default function CourseCard({ course }) {
         <div className="course-footer">
           <div className="course-teacher">
             <div className="teacher-avatar">
-              {course.teacher?.name?.charAt(0).toUpperCase()}
+              {course.teacher?.name?.charAt(0).toUpperCase() ?? '?'}
             </div>
-            <span className="teacher-name">{course.teacher?.name}</span>
+            <span className="teacher-name">{course.teacher?.name ?? 'Unknown'}</span>
           </div>
           <div className="course-students">
             <FiUsers size={12} />

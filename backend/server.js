@@ -40,7 +40,8 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok', message: 'Backend 
 app.get('/api/seed-reset', async (req, res) => {
   try {
     const bcrypt = require('bcryptjs');
-    const User = require('./models/User');
+    const User   = require('./models/User');
+    const Course = require('./models/Course');
 
     // Delete existing demo users
     await User.deleteMany({ 
@@ -54,18 +55,35 @@ app.get('/api/seed-reset', async (req, res) => {
       { name: 'Demo Teacher', email: 'teacher@demo.com', password, role: 'teacher', isActive: true },
       { name: 'Demo Student', email: 'student@demo.com', password, role: 'student', isActive: true },
     ];
+    const created = await User.insertMany(users);
+    const newTeacher = created.find(u => u.email === 'teacher@demo.com');
 
-    await User.insertMany(users);
+    // Re-assign all orphaned courses to the new teacher
+    await Course.updateMany({}, { $set: { teacher: newTeacher._id, enrolledStudents: [] } });
 
     res.json({ 
       success: true, 
-      message: 'Demo users reset successfully!',
+      message: 'Demo users reset and courses re-linked!',
       accounts: [
         'admin@demo.com / demo123',
         'teacher@demo.com / demo123',
         'student@demo.com / demo123'
       ]
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// One-time data repair: re-link courses to current teacher user
+app.get('/api/fix-data', async (req, res) => {
+  try {
+    const User   = require('./models/User');
+    const Course = require('./models/Course');
+    const teacher = await User.findOne({ email: 'teacher@demo.com' });
+    if (!teacher) return res.status(404).json({ error: 'teacher@demo.com not found. Run /api/seed-reset first.' });
+    const result = await Course.updateMany({}, { $set: { teacher: teacher._id, enrolledStudents: [] } });
+    res.json({ success: true, message: `Fixed ${result.modifiedCount} courses → teacher: ${teacher._id}` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

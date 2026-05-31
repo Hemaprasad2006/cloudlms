@@ -56,7 +56,7 @@ const updateCourse = async (req, res) => {
   if (title)       course.title       = title;
   if (description) course.description = description;
   if (category)    course.category    = category;
-  if (isPublished !== undefined) course.isPublished = isPublished === 'true';
+  if (isPublished !== undefined) course.isPublished = isPublished === true || isPublished === 'true';
   if (req.file) {
     if (course.thumbnailPublicId) await cloudinary.uploader.destroy(course.thumbnailPublicId, { resource_type: 'image' });
     const result = await uploadToCloudinary(req.file.buffer, 'lms/thumbnails', 'image');

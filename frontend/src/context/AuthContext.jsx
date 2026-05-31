@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { loginUser, registerUser, getMe } from '../utils/api';
+import { login, register, getMe } from '../utils/api';
 
 const AuthContext = createContext(null);
 
@@ -8,12 +8,12 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('lms_token');
+    const token = localStorage.getItem('token');
     if (token) {
       getMe()
         .then((res) => setUser(res.data))
         .catch(() => {
-          localStorage.removeItem('lms_token');
+          localStorage.removeItem('token');
         })
         .finally(() => setLoading(false));
     } else {
@@ -21,27 +21,27 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const login = async (email, password) => {
-    const { data } = await loginUser({ email, password });
-    localStorage.setItem('lms_token', data.token);
+  const loginUser = async (email, password) => {
+    const { data } = await login(email, password);
+    localStorage.setItem('token', data.token);
     setUser(data.user);
     return data.user;
   };
 
-  const register = async (formData) => {
-    const { data } = await registerUser(formData);
-    localStorage.setItem('lms_token', data.token);
+  const registerUser = async (formData) => {
+    const { data } = await register(formData);
+    localStorage.setItem('token', data.token);
     setUser(data.user);
     return data.user;
   };
 
   const logout = () => {
-    localStorage.removeItem('lms_token');
+    localStorage.removeItem('token');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login: loginUser, register: registerUser, logout }}>
       {children}
     </AuthContext.Provider>
   );
