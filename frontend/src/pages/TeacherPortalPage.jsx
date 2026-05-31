@@ -45,7 +45,7 @@ export default function TeacherPortalPage() {
     }
     setSubmitting(true);
     try {
-      await createCourse(form);
+      await createCourse({ ...form, isPublished: true });
       toast.success('Course created!');
       setShowModal(false);
       setForm({ title: '', description: '', category: 'Other' });
@@ -160,14 +160,6 @@ export default function TeacherPortalPage() {
                   <div className="course-list-cat">{course.category} · {course.enrolledStudents?.length || 0} students</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <button
-                    className="btn-icon"
-                    title={course.isPublished ? 'Unpublish' : 'Publish'}
-                    onClick={e => handleTogglePublish(e, course)}
-                    style={{ color: course.isPublished ? 'var(--green)' : 'var(--text-muted)' }}
-                  >
-                    {course.isPublished ? <FiEye size={15} /> : <FiEyeOff size={15} />}
-                  </button>
                   <button
                     className="btn-icon"
                     title="Delete course"
