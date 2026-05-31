@@ -162,6 +162,14 @@ export default function TeacherPortalPage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <button
                     className="btn-icon"
+                    title={course.isPublished ? 'Unpublish' : 'Publish'}
+                    onClick={e => handleTogglePublish(e, course)}
+                    style={{ color: course.isPublished ? 'var(--green)' : 'var(--text-muted)' }}
+                  >
+                    {course.isPublished ? <FiEye size={15} /> : <FiEyeOff size={15} />}
+                  </button>
+                  <button
+                    className="btn-icon"
                     title="Delete course"
                     onClick={e => handleDelete(e, course._id)}
                     style={{ color: 'var(--red)' }}
