@@ -43,7 +43,7 @@ const createCourse = async (req, res) => {
 
   const course = await Course.create({
     title, description, category, teacher: req.user._id,
-    thumbnail, thumbnailPublicId,
+    thumbnail, thumbnailPublicId, isPublished: true,
   });
   res.status(201).json({ message: 'Course created.', course });
 };
