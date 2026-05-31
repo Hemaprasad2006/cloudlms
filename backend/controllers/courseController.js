@@ -91,7 +91,18 @@ const enrollCourse = async (req, res) => {
   res.json({ message: 'Enrolled successfully.' });
 };
 
+const togglePublish = async (req, res) => {
+  const course = await Course.findById(req.params.id);
+  if (!course) { res.status(404); throw new Error('Course not found.'); }
+  if (course.teacher.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+    res.status(403); throw new Error('Not authorised.');
+  }
+  course.isPublished = !course.isPublished;
+  await course.save();
+  res.json({ message: `Course ${course.isPublished ? 'published' : 'unpublished'}.`, course });
+};
+
 const getMyCourses       = async (req, res) => res.json(await Course.find({ teacher: req.user._id }).sort({ createdAt: -1 }));
 const getEnrolledCourses = async (req, res) => res.json(await Course.find({ enrolledStudents: req.user._id, isPublished: true }).populate('teacher','name').sort({ createdAt: -1 }));
 
-module.exports = { getCourses, getCourseById, createCourse, updateCourse, deleteCourse, enrollCourse, getMyCourses, getEnrolledCourses };
+module.exports = { getCourses, getCourseById, createCourse, updateCourse, deleteCourse, enrollCourse, getMyCourses, getEnrolledCourses, togglePublish };
